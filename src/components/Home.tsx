@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Key} from 'react';
 import './Common.css';
 import "react-datepicker/dist/react-datepicker.css"
 
@@ -7,6 +7,22 @@ import ja from 'date-fns/locale/ja';
 
 import axios from 'axios';
 import addDays from 'date-fns/addDays';
+
+import Result from './Result';
+
+// exportして、`Resultコンポーネント` でもimportして使えるようにします
+export type Plan = {
+    plan_id: Key,
+    image_url: string,
+    course_name: string,
+    duration: string,
+    price: string,
+    evaluation: string,
+    prefecture: string,
+    plan_name: string,
+    caption: string,
+    reserve_url_pc: string,
+};
 
 const Home = () => {
     const Today = new Date();
@@ -20,17 +36,32 @@ const Home = () => {
     // duration Stateの初期値は60。setDurationで渡す引数の型をnumber型だと明示的に書く
     const [duration, setDuration] = React.useState<number>(60);
 
+    // plans Stateを管理できるStateを初期化する。初期値は空の配列：[]。
+    const [plans, setPlans] = React.useState<Plan[]>([]);
+
+    const [plansCount, setPlansCount] = React.useState<number | undefined>(undefined);
+    const [hasError, setHasError] = React.useState<boolean>(false); 
     registerLocale('ja', ja);
 
     const onFormSubmit = async (event: { preventDefault: () => void; }) => {
-        event.preventDefault();
+        try {
+            event.preventDefault();            
 
-        // API通信実行
-        const response = await axios.get('https://l1kwik11ne.execute-api.ap-northeast-1.amazonaws.com/production/golf-courses', {
-            params: {date: addDays(date, 14), budget: '8000', depature: '東京駅', duration: '60分'}
-        });
-        console.log(date, budget, departure, duration)
-        console.log(response);
+            // API通信実行
+            const response = await axios.get('https://l1kwik11ne.execute-api.ap-northeast-1.amazonaws.com/production/golf-courses', {
+                params: {date: addDays(date, 14), budget: '8000', depature: '東京駅', duration: '60分'}
+            });
+    
+            // onFormSubmitが実行され、正常にAPIのレスポンスが返ってきたら、plans Stateに更新される。
+            setPlans(response.data.plans);
+            setPlansCount(response.data.plansCount);
+    
+            console.log(date, budget, departure, duration)
+            console.log(response);
+        } catch (e) {
+            console.log(e);
+            setHasError(true);
+        }
     };
 
     return (
@@ -108,7 +139,8 @@ const Home = () => {
                             <i className='search icon'></i>ゴルフ場を検索する
                         </button> 
                     </div>
-                </form>
+                </form>                
+                <Result plans={plans} plansCount={plansCount} error={hasError} />
             </div>
         </div>
     );
