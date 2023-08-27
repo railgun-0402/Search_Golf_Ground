@@ -9,6 +9,7 @@ import axios from 'axios';
 import addDays from 'date-fns/addDays';
 
 import Result from './Result';
+import Loading from './Loading';
 
 // exportして、`Resultコンポーネント` でもimportして使えるようにします
 export type Plan = {
@@ -41,11 +42,15 @@ const Home = () => {
 
     const [plansCount, setPlansCount] = React.useState<number | undefined>(undefined);
     const [hasError, setHasError] = React.useState<boolean>(false); 
+    const [loading, setLoading] = React.useState<boolean>(false);
     registerLocale('ja', ja);
 
     const onFormSubmit = async (event: { preventDefault: () => void; }) => {
         try {
-            event.preventDefault();            
+            event.preventDefault();
+
+            // API通信を実施している際はローディング処理を出す
+            setLoading(true);
 
             // API通信実行
             const response = await axios.get('https://l1kwik11ne.execute-api.ap-northeast-1.amazonaws.com/production/golf-courses', {
@@ -55,9 +60,9 @@ const Home = () => {
             // onFormSubmitが実行され、正常にAPIのレスポンスが返ってきたら、plans Stateに更新される。
             setPlans(response.data.plans);
             setPlansCount(response.data.plansCount);
-    
-            console.log(date, budget, departure, duration)
-            console.log(response);
+            
+            setLoading(false);
+
         } catch (e) {
             console.log(e);
             setHasError(true);
@@ -139,7 +144,8 @@ const Home = () => {
                             <i className='search icon'></i>ゴルフ場を検索する
                         </button> 
                     </div>
-                </form>                
+                </form>
+                <Loading loading={loading}/>
                 <Result plans={plans} plansCount={plansCount} error={hasError} />
             </div>
         </div>
